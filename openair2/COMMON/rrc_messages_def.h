@@ -97,3 +97,12 @@ MESSAGE_DEF(NAS_PDU_SESSION_REQ, MESSAGE_PRIORITY_MED, nas_pdu_session_req_t, na
 
 // UE: RLC -> RRC messages
 MESSAGE_DEF(NR_RRC_RLC_MAXRTX,          MESSAGE_PRIORITY_MED,       RlcMaxRtxIndication,        nr_rlc_maxrtx_indication)
+
+MESSAGE_DEF(NR_RRC_MAC_INAC_IND,              MESSAGE_PRIORITY_MED,  nr_rrc_mac_inac_ind_t,                       nr_rrc_mac_inac_ind)
+MESSAGE_DEF(NR_RRC_MAC_RA_IND,                MESSAGE_PRIORITY_MED,  nr_rrc_mac_ra_ind_t,                         nr_rrc_mac_ra_ind)
+MESSAGE_DEF(NR_RRC_MAC_MSG3_IND,             MESSAGE_PRIORITY_MED,  nr_rrc_mac_msg3_ind_t,                      nr_rrc_mac_msg3_ind)
+MESSAGE_DEF(NR_RRC_MAC_RECONFIGURATION_COMPLETE_REQ, MESSAGE_PRIORITY_MED, nr_rrc_mac_reconfiguration_complete_req_t, nr_rrc_mac_reconfiguration_complete_req)
+
+MESSAGE_DEF(NR_RRC_CUCP_CUUP_DEFAULT_BEARER_CREATION_REQ, MESSAGE_PRIORITY_MED, nr_rrc_cucp_cuup_default_bearer_creation_req_t, nr_rrc_cucp_cuup_default_bearer_creation_req)
+MESSAGE_DEF(NR_RRC_CUCP_CUUP_DEFAULT_BEARER_CREATION_RSP, MESSAGE_PRIORITY_MED, nr_rrc_cucp_cuup_default_bearer_creation_rsp_t, nr_rrc_cucp_cuup_default_bearer_creation_rsp)
+MESSAGE_DEF(NR_RRC_CUCP_CUUP_DEDICATED_BEARER_CREATION_REQ, MESSAGE_PRIORITY_MED, nr_rrc_cucp_cuup_dedicated_bearer_creation_req_t, nr_rrc_cucp_cuup_dedicated_bearer_creation_req)

@@ -1074,14 +1074,36 @@ static void nr_rrc_process_reconfigurationWithSync(NR_UE_RRC_INST_t *rrc, NR_Rec
 
   NR_UE_Timers_Constants_t *tac = &rrc->timers_and_constants;
   nr_timer_stop(&tac->T310);
-  if (!get_softmodem_params()->phy_test) {
+  
+  NR_UE_MAC_INST_t *mac = get_mac_inst(rrc->ue_id);
+  const nrUE_params_t *nrUE_params = get_nrUE_params();
+  
+  // If skip_rach option is enabled, we don't start the T304 timer or prepare for RACH procedure
+  if (!nrUE_params->skip_rach && !get_softmodem_params()->phy_test) {
     // T304 is stopped upon completion of RA procedure which is not done in phy-test mode
     int t304_value = nr_rrc_get_T304(reconfigurationWithSync->t304);
     nr_timer_setup(&tac->T304, t304_value, 10); // 10ms step
     nr_timer_start(&tac->T304);
   }
+  
   rrc->rnti = reconfigurationWithSync->newUE_Identity;
+  
   // reset the MAC entity of this cell group (done at MAC in handle_reconfiguration_with_sync)
+  if (nrUE_params->skip_rach) {
+    // If skipping RACH, we still need to update MAC but skip the random access procedure
+    LOG_I(NR_RRC, "Reconfiguration with sync: Skip RACH procedure and directly synchronize with target cell\n");
+    
+    // Configure MAC with the new parameters but don't trigger RACH
+    MessageDef *message = itti_alloc_new_message(TASK_RRC_NRUE, 0, NR_RRC_MAC_RECONFIGURATION_COMPLETE_REQ);
+    NR_RRC_MAC_RECONFIGURATION_COMPLETE_REQ(message).skip_ra_procedure = true;
+    itti_send_msg_to_task(TASK_MAC_UE, rrc->ue_id, message);
+    
+    // Set state to CONNECTED directly
+    mac->state = UE_CONNECTED;
+  } else {
+    // Normal behavior - perform RACH
+    mac->state = UE_NOT_SYNC;
+  }
 }
 
 void nr_rrc_cellgroup_configuration(NR_UE_RRC_INST_t *rrc, NR_CellGroupConfig_t *cellGroupConfig)
@@ -1985,10 +2007,27 @@ void nr_rrc_handle_ra_indication(NR_UE_RRC_INST_t *rrc, bool ra_succeeded)
 {
   NR_UE_Timers_Constants_t *timers = &rrc->timers_and_constants;
   if (ra_succeeded && nr_timer_is_active(&timers->T304)) {
+    LOG_I(NR_RRC, "Successful random access procedure during handover\n");
     // successful Random Access procedure triggered by reconfigurationWithSync
     nr_timer_stop(&timers->T304);
-    // TODO handle the rest of procedures as described in 5.3.5.3 for when
-    // reconfigurationWithSync is included in spCellConfig
+    
+    // Update RRC state to connected
+    rrc->nrRrcState = RRC_STATE_CONNECTED_NR;
+    LOG_I(NR_RRC, "State = NR_RRC_CONNECTED\n");
+    
+    // Handle any suspended bearers that need to be resumed
+    // Resume SRB2 if it was suspended
+    if (rrc->Srb[2] == RB_SUSPENDED)
+      rrc->Srb[2] = RB_ESTABLISHED;
+    
+    // Resume DRBs if they were suspended
+    for (int i = 1; i <= MAX_DRBS_PER_UE; i++) {
+      if (get_DRB_status(rrc, i) == RB_SUSPENDED)
+        set_DRB_status(rrc, i, RB_ESTABLISHED);
+    }
+    
+    // Complete the handover
+    LOG_I(NR_RRC, "Handover completed successfully\n");
   } else if (!ra_succeeded) {
     // upon random access problem indication from MCG MAC
     // while neither T300, T301, T304, T311 nor T319 are running
@@ -1997,8 +2036,13 @@ void nr_rrc_handle_ra_indication(NR_UE_RRC_INST_t *rrc, bool ra_succeeded)
         && !nr_timer_is_active(&timers->T301)
         && !nr_timer_is_active(&timers->T304)
         && !nr_timer_is_active(&timers->T311)
-        && !nr_timer_is_active(&timers->T319))
+        && !nr_timer_is_active(&timers->T319)) {
+      LOG_E(NR_RRC, "Random access problem, considering radio link failure\n");
       handle_rlf_detection(rrc);
+    } else if (nr_timer_is_active(&timers->T304)) {
+      LOG_E(NR_RRC, "Random access problem during handover, T304 is active\n");
+      // Handover failure - wait for T304 to expire which will trigger the appropriate procedure
+    }
   }
 }
 

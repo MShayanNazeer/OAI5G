@@ -310,4 +310,71 @@ static const char *const duplex_mode_txt[] = {"FDD", "TDD"};
 #define min(a,b) cmin(a,b)
 #endif
 
+typedef struct {
+  uint64_t       optmask;   //!< mask to enable/disable some softmodem functions
+  uint32_t       N_RB_DL;
+  uint32_t       ofdm_offset_divisor;
+  uint32_t       ssb_start_subcarrier;
+  int            node_number;
+  uint8_t        nb_antennas_rx;
+  uint8_t        nb_antennas_tx;
+  uint8_t        threequarter_fs; //!< threequarter sampling or default fullrate
+  uint8_t        max_ldpc_iterations;
+  int            usrp_tx_thread;
+  int            tx_max_power;   //!< maximum tx power for softmodem
+  double         rx_gain;
+  double         rx_gain_off;
+  double         tx_gain;
+  int            UE_scan_carrier;
+  int            UE_fo_compensation;
+  int            no_timing_correction;
+  int            chest_freq;
+  int            chest_time;
+  int            vcdflag;
+  int            agc;
+  int            autonomous_ta;
+  char          *usrp_args;
+  char          *rx_subdev;
+  char          *tx_subdev;
+  char          *reconfig_file;
+  char          *rbconfig_file;
+  char          *uecap_file;
+  uint64_t       if_freq;
+  int            if_freq_off;
+  double         time_sync_P;
+  double         time_sync_I;
+  double         ntn_init_time_drift;
+  int            skip_rach;
+} nrUE_params_t;
+
+// common params
+typedef enum {
+  CLASS_A, //!< no SRS symbols allocated
+  CLASS_B  //!< SRS in symbol 11 for extended CP
+} srs_access_class_t;
+
+typedef enum                                 //!< DL/UL resources available for RNTI
+{UNUSED_RNTI_ID, CBA_RNTI_ID, RA_RNTI_ID, C_RNTI_ID, SL_RNTI_ID, DL_SCH_HARQ_PID_ID, UL_SCH_HARQ_PID_ID, NUM_RNTI} rnti_t;
+
+// This type is intended for mapping RNTI values to rnti_t types
+typedef enum                                 //!< DL/UL resources available for RNTI
+{ NONE_RNTI = 0,
+  /* Other RNTIs defined here in the same order as the rnti_t types */
+  I_RNTI = 0x01, // Paging Information RNTI
+  SI_RNTI = 0xFF, // System Information RNTI
+  P_RNTI = 0xFFFE, // Paging RNTI
+  RA_RNTI_MIN = 0x1, // The minimum  Random Access RNTI
+  RA_RNTI_MAX = 0x10, // The maximum  Random Access RNTI
+  C_RNTI_MIN = 0x11, // The minimum  Cell RNTI
+  C_RNTI_MAX = 0xFFEF, // The maximum  Cell RNTI
+  SPS_C_RNTI_MIN = 0x1F41, // The minimum value allowed for SPS C-RNTI
+  SPS_C_RNTI_MAX = 0x1F8F, // The maximum value allowed for SPS C-RNTI
+  CBA_RNTI_MIN = 0x1F90, // The minimum value allowed for CBA RNTI
+  CBA_RNTI_MAX = 0x1FF3, // The maximum value allowed for CBA RNTI
+  SL_RNTI_MIN = 0x1F90, // The minimum value allowed for SL RNTI
+  SL_RNTI_MAX = 0x1FF3, // The maximum value allowed for SL RNTI
+  SL_DISCOVERY_RNTI = 0xFF40, // SL discovery specific RNTI
+  SL_BC_RNTI = 0xFF41, // SL broadcast specific RNTI
+} rnti_types_t;
+
 #endif
